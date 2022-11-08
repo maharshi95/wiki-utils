@@ -66,5 +66,13 @@ def get_associated_country(entity_qid):
     countries = list(get_nationality(entity_qid))  # if the entity is a person
     if not countries:
         # if the entity is a location or a type that has a country associated with it
-        countries = get_country(entity_qid)
+        countries = list(get_country(entity_qid))
     return countries
+
+
+if __name__ == '__main__':
+    qids = ['Q76', 'Q34221']
+    for qid in qids:
+        print(qid, get_entity_name(qid))
+        print('Country:', get_associated_country(qid))
+    
