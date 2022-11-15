@@ -6,6 +6,7 @@ DEFAULT_TIMEOUT = 30
 PROP_IDS = {
     'nationality': 'P27',
     'country': 'P17',
+    'instance of': 'P31',
 }
 
 
@@ -48,6 +49,14 @@ def get_entity_prop(qid: str, pid: str):
 
     qids = [entry['mainsnak']['datavalue']['value']['id'] for entry in resp['claims'][pid]]
     return qids
+
+
+def get_entity_type(entity_qid: str, qids_only:bool=False):
+    qids = get_entity_prop(entity_qid, PROP_IDS['instance of'])
+    if qids_only:
+        return qids
+    names = [get_entity_name(qid) for qid in qids]
+    return zip(qids, names)
 
 
 def get_nationality(person_qid: str):
