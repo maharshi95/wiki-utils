@@ -1,6 +1,7 @@
 import json
-from typing import Optional
+from typing import Optional, Union, Collection
 import requests
+from collections import deque
 
 from . import cache
 from . import wiki_properties as wp
@@ -10,7 +11,8 @@ DEFAULT_TIMEOUT = 30
 
 class WikiClient(cache.Cached):
     def __init__(self, cache_filepath: Optional[str] = None, tag: Optional[str] = None):
-        self.api_url = "https://www.wikidata.org/w/api.php"
+        self.wikidata_api_url = "https://www.wikidata.org/w/api.php"
+        self.wikipedia_api_url = "https://{lang}.wikipedia.org/w/api.php"
         self.timeout = DEFAULT_TIMEOUT
         super().__init__(cache_filepath, tag)
 
@@ -32,7 +34,7 @@ class WikiClient(cache.Cached):
 
     def wbgetentities(self, ids: str, lang: Optional[str] = "en"):
         resp = requests.get(
-            url=self.api_url,
+            url=self.wikidata_api_url,
             params={
                 "action": "wbgetentities",
                 "ids": ids,
@@ -46,7 +48,7 @@ class WikiClient(cache.Cached):
 
     def wbgetclaims(self, entity: str, prop: str):
         resp = requests.get(
-            url=self.api_url,
+            url=self.wikidata_api_url,
             params={
                 "action": "wbgetclaims",
                 "entity": entity,
@@ -57,6 +59,32 @@ class WikiClient(cache.Cached):
         )
         resp.raise_for_status()
         return resp.json()
+
+    def wikiquery(self, title: str, lang: str = "en"):
+        resp = requests.get(
+            url=self.wikipedia_api_url.format(lang=lang),
+            params={
+                "action": "query",
+                "titles": title,
+                "format": "json",
+                "prop": "pageprops",
+            },
+            timeout=DEFAULT_TIMEOUT,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def search_qid_by_title(self, title: str, lang: str = "en"):
+        resp = self.wikiquery(title, lang)
+        page_qid_map = {}
+        for page_id, page_info in resp["query"]["pages"].items():
+            if page_id == "-1":
+                continue
+            page_qid_map[page_id] = {
+                "qid": page_info["pageprops"]["wikibase_item"],
+                "title": page_info["title"],
+            }
+        return page_qid_map
 
     @cache.cached_method("entity_info")
     def get_entity_info(self, entity_qid, lang: str = "en"):
@@ -101,19 +129,19 @@ class WikiClient(cache.Cached):
         if qids_only:
             return qids
         names = [self.get_entity_name(qid) for qid in qids]
-        return zip(qids, names)
+        return list(zip(qids, names))
 
     @cache.cached_method("entity_nationality")
     def get_nationality(self, person_qid: str):
         qids = self.get_entity_prop(person_qid, wp.COUNTRY_OF_CITIZENSHIP)
         names = [self.get_entity_name(qid) for qid in qids]
-        return zip(qids, names)
+        return list(zip(qids, names))
 
     @cache.cached_method("entity_country")
     def get_country(self, location_qid: str):
         qids = self.get_entity_prop(location_qid, wp.COUNTRY)
         names = [self.get_entity_name(qid) for qid in qids]
-        return zip(qids, names)
+        return list(zip(qids, names))
 
     @cache.cached_method("associated_country")
     def get_associated_country(self, entity_qid):
@@ -122,6 +150,23 @@ class WikiClient(cache.Cached):
             # if the entity is a location or a type that has a country associated with it
             countries = list(self.get_country(entity_qid))
         return countries
+
+    def get_super_class_from(
+        self, entity_qids: Union[str, Collection[str]], candidates: set
+    ):
+        if isinstance(entity_qids, str):
+            entity_qids = [entity_qids]
+        Q = deque(entity_qids)
+        while Q and Q[0] not in candidates:
+            qid = Q.popleft()
+            super_class_qids = self.get_entity_prop(qid, wp.SUBCLASS_OF)
+            for parent_qid in super_class_qids:
+                Q.append(parent_qid)
+        return Q[0] if Q else None
+
+    def get_entity_category(self, entity_qid: str, terminal_categories: set):
+        qids = self.get_entity_prop(entity_qid, wp.INSTANCE_OF)
+        return self.get_super_class_from(qids, terminal_categories)
 
 
 if __name__ == "__main__":
