@@ -74,6 +74,7 @@ class WikiClient(cache.Cached):
         resp.raise_for_status()
         return resp.json()
 
+    @cache.cached_method("title2qid")
     def search_qid_by_title(self, title: str, lang: str = "en"):
         resp = self.wikiquery(title, lang)
         page_qid_map = {}
