@@ -96,14 +96,18 @@ class WikiClient(cache.Cached):
             key: entity_dict[key].get(lang, {"value": ""})["value"]
             for key in ["labels", "descriptions"]
         }
-        # info_dict.update({
-        #     'aliases': [a['value'] for a in entity_dict['aliases'][lang]]
-        # })
+        info_dict.update(
+            {"aliases": [a["value"] for a in entity_dict["aliases"].get(lang, [])]}
+        )
         return info_dict
 
     def get_entity_name(self, entity_qid: str, lang: str = "en"):
         info_dict = self.get_entity_info(entity_qid, lang)
         return info_dict["labels"]
+
+    def get_entity_aliases(self, entity_qid: str, lang: str = "en"):
+        info_dict = self.get_entity_info(entity_qid, lang)
+        return [info_dict["labels"]] + info_dict["aliases"]
 
     @cache.cached_method("entity_prop")
     def get_entity_prop(self, qid: str, pid: str):
