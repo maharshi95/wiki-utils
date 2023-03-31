@@ -3,8 +3,8 @@ from typing import Optional, Union, Collection
 import requests
 from collections import deque
 
-from . import cache
-from . import wiki_properties as wp
+import cache
+import wiki_properties as wp
 
 DEFAULT_TIMEOUT = 30
 
@@ -53,6 +53,21 @@ class WikiClient(cache.Cached):
                 "action": "wbgetclaims",
                 "entity": entity,
                 "property": prop,
+                "format": "json",
+            },
+            timeout=DEFAULT_TIMEOUT,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def wbsearchentities(self, query: str, lang: str = "en"):
+        
+        resp = requests.get(
+            url=self.wikidata_api_url,
+            params={
+                "action": "wbsearchentities",
+                "search": query,
+                "language": lang,
                 "format": "json",
             },
             timeout=DEFAULT_TIMEOUT,
