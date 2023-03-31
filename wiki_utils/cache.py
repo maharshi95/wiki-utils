@@ -72,7 +72,8 @@ def cached_method(tag: str, key_fn: Callable[[tuple], Any] = _DEFAULT_KEY_FN):
             values = self._cache_get(tag, key)
             if values is None:
                 logging.info(
-                    f"{method.__name__}: '{key}' not found in cache. Making API request."
+                    f"{method.__name__}: '{key}' not found in cache. Making API"
+                    " request."
                 )
                 values = method(self, *args, **kwargs)
             self._cache_put(tag, key, values)

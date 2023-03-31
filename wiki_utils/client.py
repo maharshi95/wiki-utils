@@ -1,10 +1,10 @@
-import json
-from typing import Optional, Union, Collection
-import requests
 from collections import deque
+import json
+import requests
+from typing import Optional, Union, Collection
 
-import cache
-import wiki_properties as wp
+from . import cache
+from . import wiki_properties as wp
 
 DEFAULT_TIMEOUT = 30
 
@@ -61,7 +61,6 @@ class WikiClient(cache.Cached):
         return resp.json()
 
     def wbsearchentities(self, query: str, lang: str = "en"):
-        
         resp = requests.get(
             url=self.wikidata_api_url,
             params={
