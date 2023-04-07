@@ -16,22 +16,6 @@ class WikiClient(cache.Cached):
         self.timeout = DEFAULT_TIMEOUT
         super().__init__(cache_filepath, tag)
 
-    def read_cache_from_file(self, filepath):
-        with open(filepath) as fp:
-            return json.load(fp)
-
-    def save_cache_to_file(
-        self, filepath=None, tags: cache.Strings = None, pretty=False
-    ):
-        filepath = filepath or self.cache_filepath
-        if filepath is None:
-            raise ValueError(
-                "No default filepath set for cache. Please provide `filepath`."
-            )
-        with open(filepath, "w") as fp:
-            indent = 4 if pretty else None
-            json.dump(self.get_caches(tags), fp, indent=indent, sort_keys=True)
-
     def wbgetentities(self, ids: str, lang: Optional[str] = "en"):
         resp = requests.get(
             url=self.wikidata_api_url,
@@ -166,7 +150,7 @@ class WikiClient(cache.Cached):
     def get_associated_country(self, entity_qid):
         countries = list(self.get_nationality(entity_qid))  # if the entity is a person
         if not countries:
-            # if the entity is a location or a type that has a country associated with it
+            # if the entity has a country associated with it
             countries = list(self.get_country(entity_qid))
         return countries
 
