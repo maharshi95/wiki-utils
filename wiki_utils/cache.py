@@ -78,7 +78,8 @@ class Cached:
         if tag:
             self._cache[tag].update(cache_dict)
         else:
-            self._cache.update(cache_dict)
+            for tag in self._cache.keys():
+                self._cache[tag].update(cache_dict.get(tag, {}))
 
     def get_cache(self, tag: Optional[str] = None):
         if tag:
@@ -89,6 +90,13 @@ class Cached:
     def get_caches(self, tags: Strings = None):
         tags = tags or self._cache.keys()
         return {tag: self._cache[tag] for tag in tags}
+
+    def get_cache_keys(self, tags: Optional[str] = None):
+        tags = tags or self._cache.keys()
+        return {tag: list(self._cache[tag].keys()) for tag in tags}
+
+    def get_summary(self):
+        return {tag: len(self._cache[tag]) for tag in self._cache.keys()}
 
     def _cache_get(self, tag: str, key: str):
         return self._cache[tag].get(key, None)
