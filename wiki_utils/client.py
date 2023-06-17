@@ -72,6 +72,19 @@ class WikiClient(cache.Cached):
         resp.raise_for_status()
         return resp.json()
 
+    def wikiopensearch(self, query: str, lang: str = "en", limit=10):
+        r = requests.get(
+            url=self.wikipedia_api_url.format(lang=lang),
+            params={
+                "action": "opensearch",
+                "search": query,
+                "limit": limit,
+                "format": "json",
+            },
+        )
+        r.raise_for_status()
+        return r.json()
+
     @cache.cached_method("title2qid")
     def search_qid_by_title(self, title: str, lang: str = "en"):
         resp = self.wikiquery(title, lang)
