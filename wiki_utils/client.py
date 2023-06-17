@@ -2,6 +2,8 @@ from collections import deque
 import json
 import requests
 from typing import Optional, Union, Collection
+from loguru import logger
+
 
 from . import cache
 from . import wiki_properties as wp
@@ -100,6 +102,7 @@ class WikiClient(cache.Cached):
 
     @cache.cached_method("entity_info")
     def get_entity_info(self, entity_qid, lang: str = "en"):
+        logger.debug(f"Fetching entity_info for {entity_qid}, {lang=}")
         obj = self.wbgetentities(entity_qid, lang)
 
         entity_dict = obj["entities"][entity_qid]
@@ -191,4 +194,5 @@ if __name__ == "__main__":
     for qid in qids:
         print(qid, wiki.get_entity_name(qid))
         print("Country:", wiki.get_associated_country(qid))
-    print(json.dumps(wiki.get_caches(), indent=4))
+    print("# Entities:", len(wiki.get_cache_keys()["entity_info"]))
+    print(json.dumps(wiki.get_cache_keys(), indent=4))
