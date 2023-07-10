@@ -102,7 +102,6 @@ class WikiClient(cache.Cached):
 
     @cache.cached_method("entity_info")
     def get_entity_info(self, entity_qid, lang: str = "en"):
-        logger.debug(f"Fetching entity_info for {entity_qid}, {lang=}")
         obj = self.wbgetentities(entity_qid, lang)
 
         entity_dict = obj["entities"][entity_qid]
